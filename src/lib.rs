@@ -22,7 +22,13 @@ where
 }
 
 /// Dereference using the given pointer and pattern. The pointer is split into
-/// segments using the pattern.
+/// segments using the pattern. Starting the pointer with or without the pattern
+/// is equivalent, i.e: `with_pattern(..., ".foo", ".")` is equal to
+/// `with_pattern(..., "foo", ".")`.
+///
+/// Attempting to pass in either an empty pointer or pattern will cause this function
+/// to short circuit any dereferencing and attempt deserialization from `backing`
+/// directly.
 pub fn with_pattern<'de, 'j: 'de, J, T>(
     backing: &'j J,
     pointer: &str,
@@ -33,9 +39,27 @@ where
     T: Deserialize<'de>,
 {
     let json = backing.try_into_raw()?;
-    let pointers = pointer.split(pattern).map(Pointer::from_str);
 
-    inner(json, pointers).map_err(Into::into)
+    // If the user attempts to pass any of the annoying edge cases around
+    // pattern splitting into us, we'll simply short circuit any dereferencing
+    // and attempt deserialization of the the entire backing object
+    if pointer.is_empty() || pattern.is_empty() || pointer == pattern {
+        return with_pointer(json, None).map_err(Into::into);
+    }
+
+    // Allow users to not start a pointer with the given pattern
+    // if they choose. This is special cased to allow for situations
+    // where it would be annoying to require starting the pointer with a
+    // pattern instance, e.g: pat = ", " ptr = "foo, bar, baz".
+    if pointer.starts_with(pattern) {
+        let pointers = pointer.split(pattern).skip(1).map(Pointer::from_str);
+
+        with_pointer(json, pointers).map_err(Into::into)
+    } else {
+        let pointers = pointer.split(pattern).map(Pointer::from_str);
+
+        with_pointer(json, pointers).map_err(Into::into)
+    }
 }
 
 /// Dereference using the given iterable set of pointers.
@@ -210,6 +234,7 @@ where
     let mut target = j;
 
     for ptr in p {
+        dbg!("in main loop");
         let mut de = Deserializer::from_str(target.get());
 
         match ptr.inner {
@@ -270,6 +295,66 @@ mod tests {
         let output: &str = with_pointer(json, pointer.into_iter().copied())?;
 
         assert_eq!(output, "hello world!");
+
+        Ok(())
+    }
+
+    #[test]
+    fn with_pattern_str() -> Result {
+        let output: &str = with_pattern(NESTED, "foo, bar, 2, baz", ", ")?;
+
+        assert_eq!(output, "hello world!");
+
+        Ok(())
+    }
+
+    #[test]
+    fn with_pattern_json() -> Result {
+        let json: &RawJson = serde_json::from_str(NESTED)?;
+
+        let output: &str = with_pattern(json, "foo, bar, 2, baz", ", ")?;
+
+        assert_eq!(output, "hello world!");
+
+        Ok(())
+    }
+
+    #[test]
+    fn with_pattern_empty() -> Result {
+        let object: &RawJson = json::from_str(NESTED)?;
+        let output: &RawJson = with_pattern(NESTED, "", ", ")?;
+
+        assert_eq!(output.to_string(), object.to_string());
+
+        Ok(())
+    }
+
+    #[test]
+    fn dotted_str() -> Result {
+        let output: &str = dotted(NESTED, "foo.bar.2.baz")?;
+
+        assert_eq!(output, "hello world!");
+
+        Ok(())
+    }
+
+    #[test]
+    fn dotted_json() -> Result {
+        let json: &RawJson = serde_json::from_str(NESTED)?;
+
+        let output: &str = dotted(json, "foo.bar.2.baz")?;
+
+        assert_eq!(output, "hello world!");
+
+        Ok(())
+    }
+
+    #[test]
+    fn dotted_empty() -> Result {
+        let object: &RawJson = json::from_str(NESTED)?;
+        let output: &RawJson = dotted(NESTED, "")?;
+
+        assert_eq!(output.to_string(), object.to_string());
 
         Ok(())
     }
