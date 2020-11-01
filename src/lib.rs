@@ -79,7 +79,7 @@ impl Pointer {
         }
     }
 
-    /// Dereference using the given iterable set of pointers.
+    /// Dereference using the given iterable set of segments.
     pub fn with_segments<'de, 'j: 'de, 'p, J, I, T>(
         &self,
         backing: &'j J,
