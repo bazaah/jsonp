@@ -1,8 +1,16 @@
 [package]
 name = "jsonp"
 version = "1.0.0"
-authors = ["Bazaah <github@luxolus.com>"]
 edition = "2018"
+authors = ["Bazaah <github@luxolus.com>"]
+description = "Fast Json pointers in Rust"
+
+repository = "https://github.com/bazaah/jsonp"
+readme = "docs/README.md"
+license = "MIT OR Apache-2.0"
+
+keywords = ["json", "pointer"]
+categories = ["encoding", "parsing"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -12,3 +20,6 @@ serde = "1.0"
 
 [dev-dependencies]
 pretty_assertions = "0.6"
+
+[badges]
+maintenance = { status = "passively-maintained" }
