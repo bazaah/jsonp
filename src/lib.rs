@@ -115,7 +115,7 @@ pub use to_raw::ToRaw;
 /// The heart of this library, this structure contains all of the base
 /// functionality to dereference into borrowed Json structures.
 ///
-/// While this struct does not implement Copy, it is extremely cheap to
+/// While this struct does not implement [`Copy`][std::marker::Copy], it is extremely cheap to
 /// clone and can be done liberally.
 #[derive(Debug, Default, Clone)]
 pub struct Pointer {
@@ -263,7 +263,7 @@ impl<'a> BackingStr<'a> {
         Self { p, borrow }
     }
 
-    /// See the documentation of `Pointer::dotted`
+    /// See the documentation of [`Pointer::dotted`][Pointer::dotted].
     ///
     /// # Example
     ///
@@ -285,7 +285,7 @@ impl<'a> BackingStr<'a> {
         self.p.dotted(self.borrow, pointer)
     }
 
-    /// See the documentation of `Pointer::with_pattern`.
+    /// See the documentation of [`Pointer::with_pattern`][Pointer::with_pattern].
     ///
     /// # Example
     ///
@@ -306,7 +306,7 @@ impl<'a> BackingStr<'a> {
         self.p.with_pattern(self.borrow, pointer, pattern)
     }
 
-    /// See the documentation for `Pointer::with_segments`.
+    /// See the documentation for [`Pointer::with_segments`][Pointer::with_segments].
     ///
     /// # Example
     ///
@@ -357,7 +357,7 @@ impl<'a> BackingJson<'a> {
         Self { p, borrow }
     }
 
-    /// See the documentation of `Pointer::dotted`
+    /// See the documentation of [`Pointer::dotted`][Pointer::dotted].
     ///
     /// # Example
     ///
@@ -378,7 +378,7 @@ impl<'a> BackingJson<'a> {
         self.p.dotted(self.borrow, pointer)
     }
 
-    /// See the documentation of `Pointer::with_pattern`.
+    /// See the documentation of [`Pointer::with_pattern`][Pointer::with_pattern].
     ///
     /// # Example
     ///
@@ -399,7 +399,7 @@ impl<'a> BackingJson<'a> {
         self.p.with_pattern(self.borrow, pointer, pattern)
     }
 
-    /// See the documentation for `Pointer::with_segments`.
+    /// See the documentation for [`Pointer::with_segments`][Pointer::with_segments].
     ///
     /// # Example
     ///
@@ -450,7 +450,7 @@ impl<'a> BackingBytes<'a> {
         Self { p: pointer, borrow }
     }
 
-    /// See the documentation of `Pointer::dotted`.
+    /// See the documentation of [`Pointer::dotted`][Pointer::dotted].
     ///
     /// # Example
     ///
@@ -472,7 +472,7 @@ impl<'a> BackingBytes<'a> {
         self.p.dotted(self.borrow, pointer)
     }
 
-    /// See the documentation of `Pointer::with_pattern`.
+    /// See the documentation of [`Pointer::with_pattern`][Pointer::with_pattern].
     ///
     /// # Example
     ///
@@ -493,7 +493,7 @@ impl<'a> BackingBytes<'a> {
         self.p.with_pattern(self.borrow, pointer, pattern)
     }
 
-    /// See the documentation for `Pointer::with_segments`.
+    /// See the documentation for [`Pointer::with_segments`][Pointer::with_segments].
     ///
     /// # Example
     ///
