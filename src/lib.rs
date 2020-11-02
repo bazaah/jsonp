@@ -1,3 +1,104 @@
+//! # jsonp
+//!
+//! Fast, zero copy Json pointers.
+//!
+//! This library leverages [serde](https://serde.rs/) and [serde_json](https://docs.serde.rs/serde_json/index.html)
+//! to provide fast, easy to use, on demand deserialization of Json.
+//!
+//! Ever wanted to retrieve some deeply nested data without all the hassle of defining the required
+//! Rust structures, or allocating multiple times into a `serde_json::Value`? No problem:
+//!
+//! ```json
+//! {
+//!   "some": {
+//!     "deeply": [
+//!       {
+//!         "nested": {
+//!           "truth": "the cake is a lie"
+//!         }
+//!       }
+//!     ]
+//!   }
+//! }
+//! ```
+//!
+//! ```
+//! # use jsonp::Pointer;
+//! # type Result = std::result::Result<(), Box<dyn std::error::Error>>;
+//! # const NESTED: &str = r#"{"some": {"deeply": [{"nested": {"truth": "the cake is a lie"}}]}}"#;
+//! fn deeply_nested(json: &str) -> Result {
+//!     let p = Pointer::default();
+//!
+//!     let truth: &str = p.dotted(json, ".some.deeply.0.nested.truth")?;
+//!
+//!     assert_eq!(truth, "the cake is a lie");
+//!
+//!     Ok(())
+//! }
+//! # fn main() {
+//! #   deeply_nested(NESTED).unwrap();
+//! # }
+//! ```
+//! Leveraging serde's [zero copy](https://serde.rs/lifetimes.html#understanding-deserializer-lifetimes) deserialization
+//! we _borrow_ the deeply nested `truth` right out of the backing Json data.
+//!
+//! ## Pointer
+//!
+//! The core structure of this library is the [`jsonp::Pointer`][pointer]. It provides several
+//! methods of dereferencing into Json:
+//!
+//! - [`Pointer::with_segments`][with_segments]
+//! - [`Pointer::with_pattern`][with_pattern]
+//! - [`Pointer::dotted`][dotted]
+//!
+//! While `Pointer::with_segments` provides the most control over exactly how each
+//! [`Segment`][segment] is generated, the other two -- `Pointer::with_pattern` and
+//! `Pointer::dotted` -- make some assumptions about how the pointer string is handled. These are:
+//!
+//! 1. Passing in an empty pointer (or pattern) string will default to deserializing the entire
+//!    backing Json.
+//! 2. If the pointer and pattern are equal, same as above.
+//! 3. A pointer starting with a pattern is equivalent to one that doesn't. For example,
+//!    `dotted(".foo")` and `dotted("foo")` both result in `foo` being dereferenced.
+//!
+//! ## Mode
+//!
+//! [`jsonp::Mode`][mode] controls how `jsonp` interprets pointer segments. It has two settings,
+//! Late -- the default -- and Early.
+//!
+//! ### Late
+//!
+//! Lazily attempts to coerce pointer segments to map keys or array indexes during deserialization.
+//! This provides maximum flexibility and allows one to deserialize _numeric_ map keys, i.e "42":
+//! "...", but also has the potential to improperly deserialize an array where a map was expected,
+//! or vice versa.
+//!
+//! ### Early
+//!
+//! Decides on initialization whether a given pointer segment is a numeric index or string key.
+//! Guarantees that backing Json object agrees with its expected layout, erroring out otherwise.
+//!
+//! ## Helpers
+//!
+//! This library also provides a few convenience wrapper structs around
+//! [`jsonp::Pointer`][pointer]. These provide pleasant interfaces if you're planning on using a
+//! `Pointer` to repeatedly dereference from a single backing Json structure, and reduce some of
+//! the generics and lifetime noise in function signatures.
+//!
+//! - [`jsonp::BackingStr`][b_str]
+//! - [`jsonp::BackingJson`][b_json]
+//! - [`jsonp::BackingBytes`][b_bytes]
+//!
+//! [pointer]: Pointer
+//! [mode]: Mode
+//! [segment]: Segment
+//! [b_str]: BackingStr
+//! [b_json]: BackingJson
+//! [b_bytes]: BackingBytes
+//! [with_segments]: Pointer::with_segments
+//! [with_pattern]: Pointer::with_pattern
+//! [dotted]: Pointer::dotted
+
 use {
     json::value::RawValue as RawJson,
     serde::{de::Deserializer as _, Deserialize},
