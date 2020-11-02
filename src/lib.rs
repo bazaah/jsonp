@@ -29,6 +29,19 @@ impl Pointer {
 
     /// Convenience function for using the common dot (`.`) delimited format for dereferencing
     /// nested Json structures.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use jsonp::Pointer;
+    ///
+    /// fn main() {
+    ///     let json = r#"{"outer": {"array": [0, "one", true]}}"#;
+    ///     let one: &str = Pointer::default().dotted(json, "outer.array.1").unwrap();
+    ///
+    ///     assert!(one == "one");
+    /// }
+    /// ```
     pub fn dotted<'de, 'j: 'de, J, T>(&self, backing: &'j J, pointer: &str) -> Result<T, J::Error>
     where
         J: ToRaw<'j> + ?Sized,
@@ -45,6 +58,18 @@ impl Pointer {
     /// Attempting to pass in either an empty pointer or pattern will cause this function
     /// to short circuit any dereferencing and attempt deserialization from `backing`
     /// directly.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use jsonp::Pointer;
+    /// fn main() {
+    ///     let json = r#"{"outer": {"array": [0, "one", true]}}"#;
+    ///     let is_true: bool = Pointer::default().with_pattern(json, "outer array 2", " ").unwrap();
+    ///
+    ///     assert!(is_true);
+    /// }
+    /// ```
     pub fn with_pattern<'de, 'j: 'de, J, T>(
         &self,
         backing: &'j J,
@@ -80,6 +105,21 @@ impl Pointer {
     }
 
     /// Dereference using the given iterable set of segments.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use jsonp::{Pointer, Segment};
+    /// fn main() {
+    ///     let json = r#"{"outer": {"array": [0, 1, 2, 3]}}"#;
+    ///     let segments = &["outer", "array"];
+    ///     let array: Vec<i8> = Pointer::default()
+    ///         .with_segments(json, segments.into_iter().copied().map(Segment::lazy))
+    ///         .unwrap();
+    ///
+    ///     assert_eq!(&array, &[0, 1, 2, 3]);
+    /// }
+    /// ```
     pub fn with_segments<'de, 'j: 'de, 'p, J, I, T>(
         &self,
         backing: &'j J,
@@ -112,39 +152,80 @@ pub struct BackingStr<'a> {
 }
 
 impl<'a> BackingStr<'a> {
+    /// Instantiate a wrapper around the given string slice.
     pub fn new(borrow: &'a str) -> Self {
         Self::with(borrow, Default::default())
     }
 
-    pub fn with(borrow: &'a str, pointer: Pointer) -> Self {
-        Self { p: pointer, borrow }
+    /// Instantiate a wrapper around the given string slice and pointer.
+    pub fn with(borrow: &'a str, p: Pointer) -> Self {
+        Self { p, borrow }
     }
 
     /// See the documentation of `Pointer::dotted`
-    pub fn dotted<'de, 'j: 'de, T>(&'j self, pointer: &str) -> Result<T, json::Error>
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use jsonp::BackingStr;
+    ///
+    /// fn main() {
+    ///     let json = r#"{"outer": {"array": [0, "one", true]}}"#;
+    ///     let one: &str = BackingStr::new(json).dotted("outer.array.1").unwrap();
+    ///
+    ///     assert!(one == "one");
+    /// }
+    /// ```
+    pub fn dotted<'de, T>(&self, pointer: &str) -> Result<T, json::Error>
     where
         T: Deserialize<'de>,
+        'a: 'de,
     {
         self.p.dotted(self.borrow, pointer)
     }
 
     /// See the documentation of `Pointer::with_pattern`.
-    pub fn pattern<'de, 'j: 'de, T>(
-        &'j self,
-        pointer: &str,
-        pattern: &str,
-    ) -> Result<T, json::Error>
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use jsonp::BackingStr;
+    /// fn main() {
+    ///     let json = r#"{"outer": {"array": [0, "one", true]}}"#;
+    ///     let is_true: bool = BackingStr::new(json).pattern("outer array 2", " ").unwrap();
+    ///
+    ///     assert!(is_true);
+    /// }
+    /// ```
+    pub fn pattern<'de, T>(&self, pointer: &str, pattern: &str) -> Result<T, json::Error>
     where
         T: Deserialize<'de>,
+        'a: 'de,
     {
         self.p.with_pattern(self.borrow, pointer, pattern)
     }
 
-    /// See the documentation for `Pointer::with_segments`
-    pub fn pointer<'de, 'j: 'de, 'p, I, T>(&'j self, pointers: I) -> Result<T, json::Error>
+    /// See the documentation for `Pointer::with_segments`.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use jsonp::{BackingStr, Segment};
+    /// fn main() {
+    ///     let json = r#"{"outer": {"array": [0, 1, 2, 3]}}"#;
+    ///     let segments = &["outer", "array"];
+    ///     let array: Vec<i8> = BackingStr::new(json)
+    ///         .pointer(segments.into_iter().copied().map(Segment::lazy))
+    ///         .unwrap();
+    ///
+    ///     assert_eq!(&array, &[0, 1, 2, 3]);
+    /// }
+    /// ```
+    pub fn pointer<'de, 'p, I, T>(&self, pointers: I) -> Result<T, json::Error>
     where
         I: IntoIterator<Item = Segment<'p>>,
         T: Deserialize<'de>,
+        'a: 'de,
     {
         self.p.with_segments(self.borrow, pointers)
     }
@@ -156,7 +237,7 @@ impl<'a> From<&'a str> for BackingStr<'a> {
     }
 }
 
-/// Convenience wrapper around the library core functions for raw json,
+/// Convenience wrapper around the library core functions for raw Json,
 /// removing some of the generic noise from function signatures.
 #[derive(Debug, Clone)]
 pub struct BackingJson<'a> {
@@ -165,39 +246,79 @@ pub struct BackingJson<'a> {
 }
 
 impl<'a> BackingJson<'a> {
+    /// Instantiate a wrapper around the given borrowed raw Json.
     pub fn new(borrow: &'a RawJson) -> Self {
         Self::with(borrow, Default::default())
     }
 
-    pub fn with(borrow: &'a RawJson, pointer: Pointer) -> Self {
-        Self { p: pointer, borrow }
+    /// Instantiate a wrapper around the given borrowed raw Json and pointer.
+    pub fn with(borrow: &'a RawJson, p: Pointer) -> Self {
+        Self { p, borrow }
     }
 
     /// See the documentation of `Pointer::dotted`
-    pub fn dotted<'de, 'j: 'de, T>(&'j self, pointer: &str) -> Result<T, json::Error>
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use {jsonp::{BackingJson, Segment}, serde_json::from_str};
+    /// fn main() {
+    ///     let json = from_str(r#"{"outer": {"array": [0, "one", true]}}"#).unwrap();
+    ///     let one: &str = BackingJson::new(json).dotted("outer.array.1").unwrap();
+    ///
+    ///     assert!(one == "one");
+    /// }
+    /// ```
+    pub fn dotted<'de, T>(&self, pointer: &str) -> Result<T, json::Error>
     where
         T: Deserialize<'de>,
+        'a: 'de,
     {
         self.p.dotted(self.borrow, pointer)
     }
 
     /// See the documentation of `Pointer::with_pattern`.
-    pub fn pattern<'de, 'j: 'de, T>(
-        &'j self,
-        pointer: &str,
-        pattern: &str,
-    ) -> Result<T, json::Error>
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use {jsonp::{BackingJson, Segment}, serde_json::from_str};
+    /// fn main() {
+    ///     let json = from_str(r#"{"outer": {"array": [0, "one", true]}}"#).unwrap();
+    ///     let is_true: bool = BackingJson::new(json).pattern("outer array 2", " ").unwrap();
+    ///
+    ///     assert!(is_true);
+    /// }
+    /// ```
+    pub fn pattern<'de, T>(&self, pointer: &str, pattern: &str) -> Result<T, json::Error>
     where
         T: Deserialize<'de>,
+        'a: 'de,
     {
         self.p.with_pattern(self.borrow, pointer, pattern)
     }
 
-    /// See the documentation for `Pointer::with_segments`
-    pub fn pointer<'de, 'j: 'de, 'p, I, T>(&'j self, pointers: I) -> Result<T, json::Error>
+    /// See the documentation for `Pointer::with_segments`.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use {jsonp::{BackingJson, Segment}, serde_json::from_str};
+    /// fn main() {
+    ///     let json = from_str(r#"{"outer": {"array": [0, 1, 2, 3]}}"#).unwrap();
+    ///     let segments = &["outer", "array"];
+    ///     let array: Vec<i8> = BackingJson::new(json)
+    ///         .pointer(segments.into_iter().copied().map(Segment::lazy))
+    ///         .unwrap();
+    ///
+    ///     assert_eq!(&array, &[0, 1, 2, 3]);
+    /// }
+    /// ```
+    pub fn pointer<'de, 'p, I, T>(&self, pointers: I) -> Result<T, json::Error>
     where
         I: IntoIterator<Item = Segment<'p>>,
         T: Deserialize<'de>,
+        'a: 'de,
     {
         self.p.with_segments(self.borrow, pointers)
     }
@@ -218,39 +339,80 @@ pub struct BackingBytes<'a> {
 }
 
 impl<'a> BackingBytes<'a> {
+    /// Instantiate a wrapper around the given byte slice.
     pub fn new(borrow: &'a [u8]) -> Self {
         Self::with(borrow, Default::default())
     }
 
+    /// Instantiate a wrapper around the given byte slice and pointer.
     pub fn with(borrow: &'a [u8], pointer: Pointer) -> Self {
         Self { p: pointer, borrow }
     }
 
-    /// See the documentation of `Pointer::dotted`
-    pub fn dotted<'de, 'j: 'de, T>(&'j self, pointer: &str) -> Result<T, json::Error>
+    /// See the documentation of `Pointer::dotted`.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use jsonp::BackingBytes;
+    ///
+    /// fn main() {
+    ///     let json = r#"{"outer": {"array": [0, "one", true]}}"#.as_bytes();
+    ///     let one: &str = BackingBytes::new(json).dotted("outer.array.1").unwrap();
+    ///
+    ///     assert!(one == "one");
+    /// }
+    /// ```
+    pub fn dotted<'de, T>(&self, pointer: &str) -> Result<T, json::Error>
     where
         T: Deserialize<'de>,
+        'a: 'de,
     {
         self.p.dotted(self.borrow, pointer)
     }
 
     /// See the documentation of `Pointer::with_pattern`.
-    pub fn pattern<'de, 'j: 'de, T>(
-        &'j self,
-        pointer: &str,
-        pattern: &str,
-    ) -> Result<T, json::Error>
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use jsonp::BackingBytes;
+    /// fn main() {
+    ///     let json = r#"{"outer": {"array": [0, "one", true]}}"#.as_bytes();
+    ///     let is_true: bool = BackingBytes::new(json).pattern("outer array 2", " ").unwrap();
+    ///
+    ///     assert!(is_true);
+    /// }
+    /// ```
+    pub fn pattern<'de, T>(&self, pointer: &str, pattern: &str) -> Result<T, json::Error>
     where
         T: Deserialize<'de>,
+        'a: 'de,
     {
         self.p.with_pattern(self.borrow, pointer, pattern)
     }
 
-    /// See the documentation for `Pointer::with_segments`
-    pub fn pointer<'de, 'j: 'de, 'p, I, T>(&'j self, pointers: I) -> Result<T, json::Error>
+    /// See the documentation for `Pointer::with_segments`.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use jsonp::{BackingBytes, Segment};
+    /// fn main() {
+    ///     let json = r#"{"outer": {"array": [0, 1, 2, 3]}}"#.as_bytes();
+    ///     let segments = &["outer", "array"];
+    ///     let array: Vec<i8> = BackingBytes::new(json)
+    ///         .pointer(segments.into_iter().copied().map(Segment::lazy))
+    ///         .unwrap();
+    ///
+    ///     assert_eq!(&array, &[0, 1, 2, 3]);
+    /// }
+    /// ```
+    pub fn pointer<'de, 'p, I, T>(&self, pointers: I) -> Result<T, json::Error>
     where
         I: IntoIterator<Item = Segment<'p>>,
         T: Deserialize<'de>,
+        'a: 'de,
     {
         self.p.with_segments(self.borrow, pointers)
     }
@@ -268,7 +430,7 @@ impl<'a> From<&'a [u8]> for BackingBytes<'a> {
 /// deserialization to determine if the segment is a map key or
 /// array index. Early parses each segment as soon as it's handled.
 /// For more information, see `Segment`.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Mode {
     Late,
     Early,
@@ -357,7 +519,6 @@ where
     let mut target = j;
 
     for ptr in p {
-        dbg!("in main loop");
         let mut de = Deserializer::from_str(target.get());
 
         match ptr.inner {
