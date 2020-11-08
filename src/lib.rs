@@ -35,9 +35,7 @@
 //!
 //!     Ok(())
 //! }
-//! # fn main() {
-//! #   deeply_nested(NESTED).unwrap();
-//! # }
+//! # deeply_nested(NESTED).unwrap();
 //! ```
 //! Leveraging serde's [zero copy](https://serde.rs/lifetimes.html#understanding-deserializer-lifetimes) deserialization
 //! we _borrow_ the deeply nested `truth` right out of the backing Json data.
@@ -136,12 +134,10 @@ impl Pointer {
     /// ```
     /// use jsonp::Pointer;
     ///
-    /// fn main() {
-    ///     let json = r#"{"outer": {"array": [0, "one", true]}}"#;
-    ///     let one: &str = Pointer::default().dotted(json, "outer.array.1").unwrap();
+    /// let json = r#"{"outer": {"array": [0, "one", true]}}"#;
+    /// let one: &str = Pointer::default().dotted(json, "outer.array.1").unwrap();
     ///
-    ///     assert!(one == "one");
-    /// }
+    /// assert!(one == "one");
     /// ```
     pub fn dotted<'de, 'j: 'de, J, T>(&self, backing: &'j J, pointer: &str) -> Result<T, J::Error>
     where
@@ -164,12 +160,11 @@ impl Pointer {
     ///
     /// ```
     /// use jsonp::Pointer;
-    /// fn main() {
-    ///     let json = r#"{"outer": {"array": [0, "one", true]}}"#;
-    ///     let is_true: bool = Pointer::default().with_pattern(json, "outer array 2", " ").unwrap();
     ///
-    ///     assert!(is_true);
-    /// }
+    /// let json = r#"{"outer": {"array": [0, "one", true]}}"#;
+    /// let is_true: bool = Pointer::default().with_pattern(json, "outer array 2", " ").unwrap();
+    ///
+    /// assert!(is_true);
     /// ```
     pub fn with_pattern<'de, 'j: 'de, J, T>(
         &self,
@@ -211,15 +206,14 @@ impl Pointer {
     ///
     /// ```
     /// use jsonp::{Pointer, Segment};
-    /// fn main() {
-    ///     let json = r#"{"outer": {"array": [0, 1, 2, 3]}}"#;
-    ///     let segments = &["outer", "array"];
-    ///     let array: Vec<i8> = Pointer::default()
-    ///         .with_segments(json, segments.into_iter().copied().map(Segment::lazy))
-    ///         .unwrap();
     ///
-    ///     assert_eq!(&array, &[0, 1, 2, 3]);
-    /// }
+    /// let json = r#"{"outer": {"array": [0, 1, 2, 3]}}"#;
+    /// let segments = &["outer", "array"];
+    /// let array: Vec<i8> = Pointer::default()
+    ///     .with_segments(json, segments.into_iter().copied().map(Segment::lazy))
+    ///     .unwrap();
+    ///
+    /// assert_eq!(&array, &[0, 1, 2, 3]);
     /// ```
     pub fn with_segments<'de, 'j: 'de, 'p, J, I, T>(
         &self,
@@ -270,12 +264,10 @@ impl<'a> BackingStr<'a> {
     /// ```
     /// use jsonp::BackingStr;
     ///
-    /// fn main() {
-    ///     let json = r#"{"outer": {"array": [0, "one", true]}}"#;
-    ///     let one: &str = BackingStr::new(json).dotted("outer.array.1").unwrap();
+    /// let json = r#"{"outer": {"array": [0, "one", true]}}"#;
+    /// let one: &str = BackingStr::new(json).dotted("outer.array.1").unwrap();
     ///
-    ///     assert!(one == "one");
-    /// }
+    /// assert!(one == "one");
     /// ```
     pub fn dotted<'de, T>(&self, pointer: &str) -> Result<T, json::Error>
     where
@@ -291,12 +283,11 @@ impl<'a> BackingStr<'a> {
     ///
     /// ```
     /// use jsonp::BackingStr;
-    /// fn main() {
-    ///     let json = r#"{"outer": {"array": [0, "one", true]}}"#;
-    ///     let is_true: bool = BackingStr::new(json).pattern("outer array 2", " ").unwrap();
     ///
-    ///     assert!(is_true);
-    /// }
+    /// let json = r#"{"outer": {"array": [0, "one", true]}}"#;
+    /// let is_true: bool = BackingStr::new(json).pattern("outer array 2", " ").unwrap();
+    ///
+    /// assert!(is_true);
     /// ```
     pub fn pattern<'de, T>(&self, pointer: &str, pattern: &str) -> Result<T, json::Error>
     where
@@ -312,15 +303,14 @@ impl<'a> BackingStr<'a> {
     ///
     /// ```
     /// use jsonp::{BackingStr, Segment};
-    /// fn main() {
-    ///     let json = r#"{"outer": {"array": [0, 1, 2, 3]}}"#;
-    ///     let segments = &["outer", "array"];
-    ///     let array: Vec<i8> = BackingStr::new(json)
-    ///         .pointer(segments.into_iter().copied().map(Segment::lazy))
-    ///         .unwrap();
     ///
-    ///     assert_eq!(&array, &[0, 1, 2, 3]);
-    /// }
+    /// let json = r#"{"outer": {"array": [0, 1, 2, 3]}}"#;
+    /// let segments = &["outer", "array"];
+    /// let array: Vec<i8> = BackingStr::new(json)
+    ///     .pointer(segments.into_iter().copied().map(Segment::lazy))
+    ///     .unwrap();
+    ///
+    /// assert_eq!(&array, &[0, 1, 2, 3]);
     /// ```
     pub fn pointer<'de, 'p, I, T>(&self, pointers: I) -> Result<T, json::Error>
     where
@@ -363,12 +353,11 @@ impl<'a> BackingJson<'a> {
     ///
     /// ```
     /// use {jsonp::{BackingJson, Segment}, serde_json::from_str};
-    /// fn main() {
-    ///     let json = from_str(r#"{"outer": {"array": [0, "one", true]}}"#).unwrap();
-    ///     let one: &str = BackingJson::new(json).dotted("outer.array.1").unwrap();
     ///
-    ///     assert!(one == "one");
-    /// }
+    /// let json = from_str(r#"{"outer": {"array": [0, "one", true]}}"#).unwrap();
+    /// let one: &str = BackingJson::new(json).dotted("outer.array.1").unwrap();
+    ///
+    /// assert!(one == "one");
     /// ```
     pub fn dotted<'de, T>(&self, pointer: &str) -> Result<T, json::Error>
     where
@@ -384,12 +373,11 @@ impl<'a> BackingJson<'a> {
     ///
     /// ```
     /// use {jsonp::{BackingJson, Segment}, serde_json::from_str};
-    /// fn main() {
-    ///     let json = from_str(r#"{"outer": {"array": [0, "one", true]}}"#).unwrap();
-    ///     let is_true: bool = BackingJson::new(json).pattern("outer array 2", " ").unwrap();
     ///
-    ///     assert!(is_true);
-    /// }
+    /// let json = from_str(r#"{"outer": {"array": [0, "one", true]}}"#).unwrap();
+    /// let is_true: bool = BackingJson::new(json).pattern("outer array 2", " ").unwrap();
+    ///
+    /// assert!(is_true);
     /// ```
     pub fn pattern<'de, T>(&self, pointer: &str, pattern: &str) -> Result<T, json::Error>
     where
@@ -405,15 +393,14 @@ impl<'a> BackingJson<'a> {
     ///
     /// ```
     /// use {jsonp::{BackingJson, Segment}, serde_json::from_str};
-    /// fn main() {
-    ///     let json = from_str(r#"{"outer": {"array": [0, 1, 2, 3]}}"#).unwrap();
-    ///     let segments = &["outer", "array"];
-    ///     let array: Vec<i8> = BackingJson::new(json)
-    ///         .pointer(segments.into_iter().copied().map(Segment::lazy))
-    ///         .unwrap();
     ///
-    ///     assert_eq!(&array, &[0, 1, 2, 3]);
-    /// }
+    /// let json = from_str(r#"{"outer": {"array": [0, 1, 2, 3]}}"#).unwrap();
+    /// let segments = &["outer", "array"];
+    /// let array: Vec<i8> = BackingJson::new(json)
+    ///     .pointer(segments.into_iter().copied().map(Segment::lazy))
+    ///     .unwrap();
+    ///
+    /// assert_eq!(&array, &[0, 1, 2, 3]);
     /// ```
     pub fn pointer<'de, 'p, I, T>(&self, pointers: I) -> Result<T, json::Error>
     where
@@ -457,12 +444,10 @@ impl<'a> BackingBytes<'a> {
     /// ```
     /// use jsonp::BackingBytes;
     ///
-    /// fn main() {
-    ///     let json = r#"{"outer": {"array": [0, "one", true]}}"#.as_bytes();
-    ///     let one: &str = BackingBytes::new(json).dotted("outer.array.1").unwrap();
+    /// let json = r#"{"outer": {"array": [0, "one", true]}}"#.as_bytes();
+    /// let one: &str = BackingBytes::new(json).dotted("outer.array.1").unwrap();
     ///
-    ///     assert!(one == "one");
-    /// }
+    /// assert!(one == "one");
     /// ```
     pub fn dotted<'de, T>(&self, pointer: &str) -> Result<T, json::Error>
     where
@@ -478,12 +463,11 @@ impl<'a> BackingBytes<'a> {
     ///
     /// ```
     /// use jsonp::BackingBytes;
-    /// fn main() {
-    ///     let json = r#"{"outer": {"array": [0, "one", true]}}"#.as_bytes();
-    ///     let is_true: bool = BackingBytes::new(json).pattern("outer array 2", " ").unwrap();
     ///
-    ///     assert!(is_true);
-    /// }
+    /// let json = r#"{"outer": {"array": [0, "one", true]}}"#.as_bytes();
+    /// let is_true: bool = BackingBytes::new(json).pattern("outer array 2", " ").unwrap();
+    ///
+    /// assert!(is_true);
     /// ```
     pub fn pattern<'de, T>(&self, pointer: &str, pattern: &str) -> Result<T, json::Error>
     where
@@ -499,15 +483,14 @@ impl<'a> BackingBytes<'a> {
     ///
     /// ```
     /// use jsonp::{BackingBytes, Segment};
-    /// fn main() {
-    ///     let json = r#"{"outer": {"array": [0, 1, 2, 3]}}"#.as_bytes();
-    ///     let segments = &["outer", "array"];
-    ///     let array: Vec<i8> = BackingBytes::new(json)
-    ///         .pointer(segments.into_iter().copied().map(Segment::lazy))
-    ///         .unwrap();
     ///
-    ///     assert_eq!(&array, &[0, 1, 2, 3]);
-    /// }
+    /// let json = r#"{"outer": {"array": [0, 1, 2, 3]}}"#.as_bytes();
+    /// let segments = &["outer", "array"];
+    /// let array: Vec<i8> = BackingBytes::new(json)
+    ///     .pointer(segments.into_iter().copied().map(Segment::lazy))
+    ///     .unwrap();
+    ///
+    /// assert_eq!(&array, &[0, 1, 2, 3]);
     /// ```
     pub fn pointer<'de, 'p, I, T>(&self, pointers: I) -> Result<T, json::Error>
     where
